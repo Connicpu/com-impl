@@ -1,0 +1,16 @@
+[package]
+name = "derive-com-impl"
+version = "0.1.0-alpha1"
+authors = ["Connie Hilarides <conni_h@outlook.com>"]
+edition = "2015"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "0.15.18", features = ["full", "extra-traits"] }
+quote = { version = "0.6.10", features = ["proc-macro"] }
+proc-macro2 = "0.4.20"
+
+[package.metadata.docs.rs]
+default-target = "x86_64-pc-windows-msvc"

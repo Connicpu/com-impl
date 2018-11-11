@@ -1,0 +1,12 @@
+[package]
+name = "com-impl"
+version = "0.1.0-alpha1"
+authors = ["Connie Hilarides <conni_h@outlook.com>"]
+edition = "2015"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.6", features = ["unknwnbase"] }
+wio = "0.2.0"
+
+[package.metadata.docs.rs]
+default-target = "x86_64-pc-windows-msvc"

@@ -1,0 +1,15 @@
+[package]
+name = "test-com-impl"
+version = "0.1.0"
+authors = ["Connie Hilarides <conni_h@outlook.com>"]
+edition = "2015"
+
+[dependencies]
+com-impl = { path = "../com-impl" }
+derive-com-impl = { path = "../derive-com-impl" }
+wio = "0.2.0"
+
+[dependencies.winapi]
+version = "0.3.6"
+features = ["dwrite"]
+

@@ -126,9 +126,7 @@ pub fn derive_com_impl(input: TokenStream) -> TokenStream {
 /// `#[com_impl]`
 /// 
 /// Generates a VTable for the functions implemented in the `impl` block this attribute is
-/// applied to. Method names by default are mapped from snake_case to PascalCase to determine
-/// their winapi names. If you would like to override the name, you can specify an attribute
-/// on the method (see below).
+/// applied to.
 /// 
 /// For the general syntax see the example in the crate root.
 /// 
@@ -136,8 +134,31 @@ pub fn derive_com_impl(input: TokenStream) -> TokenStream {
 /// 
 /// `#[com_impl(no_parent)]`
 /// 
-/// - Specifies that the vtable being implemented here does not have a `parent` member. These
-///   are very rare, but include IUnknown.
+/// Specifies that the vtable being implemented here does not have a `parent` member. These
+/// are very rare, but include IUnknown.
+/// 
+/// ### Attributes on methods
+/// 
+/// `#[com_name = "..."]`
+/// 
+/// Overrides the method name this function corresponds to in the VTable. Method names by
+/// default are mapped from snake_case to PascalCase to determine their winapi names.
+/// 
+/// <hb/>
+/// 
+/// `#[panic(abort)]`
+/// 
+/// Specifies that in the stub function, code should be generated to catch any unwinding from
+/// the user-provided bodies and abort on panic.
+/// 
+/// <hb/>
+/// 
+/// `#[panic(result = "EXPRESSION")]`
+/// 
+/// Specifies that in the stub functions code should be generated to catch any unwinding from
+/// the user-provided bodies and return the specified expression. The expression should have
+/// the same type as the standard function body return. This is most useful with functions that
+/// return an HRESULT.
 pub fn com_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
     let args = parse_macro_input!(attr as AttributeArgs);
     let item = parse_macro_input!(item as Item);

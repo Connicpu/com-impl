@@ -1,6 +1,6 @@
 use com_impl::{Refcount, VTable};
 use winapi::ctypes::c_void;
-use winapi::shared::winerror::{ERROR_INVALID_INDEX, HRESULT, HRESULT_FROM_WIN32, S_OK};
+use winapi::shared::winerror::{ERROR_INVALID_INDEX, E_FAIL, HRESULT, HRESULT_FROM_WIN32, S_OK};
 use winapi::um::dwrite::{IDWriteFontFileStream, IDWriteFontFileStreamVtbl};
 use wio::com::ComPtr;
 
@@ -34,6 +34,7 @@ unsafe impl IDWriteFontFileStream for FileStream {
         S_OK
     }
 
+    #[panic(result = "E_FAIL")]
     unsafe fn read_file_fragment(
         &self,
         start: *mut *const c_void,
@@ -58,6 +59,7 @@ unsafe impl IDWriteFontFileStream for FileStream {
         S_OK
     }
 
+    #[panic(abort)]
     unsafe fn release_file_fragment(&self, _ctx: *mut c_void) {
         // Nothing to do
     }

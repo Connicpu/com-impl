@@ -2,8 +2,8 @@ use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{
-    AttributeArgs, Block, FnArg, Generics, Ident, ImplItem, ImplItemMethod, Item, ItemImpl, Lit,
-    Meta, MetaNameValue, NestedMeta, Pat, Path, ReturnType, Type,
+    AttributeArgs, Block, Expr, FnArg, Generics, Ident, ImplItem, ImplItemMethod, Item, ItemImpl,
+    Lit, Meta, MetaNameValue, NestedMeta, Pat, Path, ReturnType, Type,
 };
 
 pub fn expand_com_impl(args: &AttributeArgs, item: &Item) -> Result<TokenStream, String> {
@@ -162,10 +162,17 @@ struct ComFunction<'a> {
     is_mut: bool,
     is_unsafe: bool,
     com_name: Ident,
+    panic_behavior: OnPanic,
     abi: String,
     args: Vec<Arg<'a>>,
     ret: &'a ReturnType,
     body: &'a Block,
+}
+
+enum OnPanic {
+    Nothing,
+    Abort,
+    Hresult(Box<TokenStream>),
 }
 
 impl<'a> ComFunction<'a> {
@@ -182,12 +189,18 @@ impl<'a> ComFunction<'a> {
         let args = self.quote_stub_args(context);
         let pass = self.quote_pass_args();
         let ret = self.ret;
+        let call_body = self.quote_stub_call(
+            context,
+            quote! {
+                let this = #refderef(this as *#ptrkind Self);
+                Self::#body_name(this, #pass)
+            },
+        );
 
         quote! {
             #[inline(never)]
             unsafe extern #abi fn #name(#args) #ret {
-                let this = #refderef(this as *#ptrkind Self);
-                Self::#body_name(this, #pass)
+                #call_body
             }
         }
     }
@@ -242,6 +255,37 @@ impl<'a> ComFunction<'a> {
         }
     }
 
+    fn quote_stub_call(&self, context: &ComImpl, inner: TokenStream) -> TokenStream {
+        match &self.panic_behavior {
+            OnPanic::Nothing => inner,
+            OnPanic::Abort => {
+                let message = self.abort_message(context);
+                quote! {
+                    let result = std::panic::catch_unwind(move || {
+                        #inner
+                    });
+                    match result {
+                        Ok(result) => result,
+                        Err(_) => {
+                            let stderr = std::io::stderr();
+                            let _ = std::io::Write::write_all(&mut stderr.lock(), #message);
+                            std::process::abort();
+                        }
+                    }
+                }
+            }
+            OnPanic::Hresult(expr) => quote! {
+                let __com_impl_result = std::panic::catch_unwind(move || {
+                    #inner
+                });
+                match __com_impl_result {
+                    Ok(result) => result,
+                    Err(_) => { #expr }
+                }
+            },
+        }
+    }
+
     // ----------------------------------------------------------------
 
     fn stub_name(&self, com_ty_name: &Ident) -> Ident {
@@ -261,6 +305,17 @@ impl<'a> ComFunction<'a> {
         quote! {
             #com_name: Self::#stub_name
         }
+    }
+
+    fn abort_message(&self, context: &ComImpl) -> syn::LitByteStr {
+        syn::LitByteStr::new(
+            &format!(
+                "User-implemented COM method for {}::{} panicked. Aborting!",
+                context.com_ty_name, self.com_name,
+            )
+            .as_bytes(),
+            Span::call_site(),
+        )
     }
 
     // ----------------------------------------------------------------
@@ -286,6 +341,7 @@ impl<'a> ComFunction<'a> {
         let is_mut = Self::determine_mut(item)?;
         let is_unsafe = Self::determine_unsafe(item);
         let com_name = Self::determine_name(item)?;
+        let panic_behavior = Self::determine_panic_behavior(item)?;
         let abi = Self::determine_abi(item);
         let args = Self::parse_args(item)?;
         let ret = &item.sig.decl.output;
@@ -295,6 +351,7 @@ impl<'a> ComFunction<'a> {
             is_mut,
             is_unsafe,
             com_name,
+            panic_behavior,
             abi,
             args,
             ret,
@@ -333,7 +390,7 @@ impl<'a> ComFunction<'a> {
                     }) => return Ok(Ident::new(&name.value(), name.span())),
                     _ => return Err("Invalid syntax for #[com_name] attribute".into()),
                 }
-            } else {
+            } else if attr.path.segments.len() != 1 || attr.path.segments[0].ident != "panic" {
                 return Err(format!(
                     "Invalid attribute `#[{}]` on COM method",
                     attr.path.clone().into_token_stream()
@@ -366,6 +423,50 @@ impl<'a> ComFunction<'a> {
         }
 
         Ok(Ident::new(&name, item.sig.ident.span()))
+    }
+
+    fn determine_panic_behavior(item: &ImplItemMethod) -> Result<OnPanic, String> {
+        for attr in &item.attrs {
+            if attr.path.segments.len() != 1 || attr.path.segments[0].ident != "panic" {
+                continue;
+            }
+
+            let meta = attr.parse_meta().map_err(|e| e.to_string())?;
+            let attr = match &meta {
+                Meta::List(list) if list.nested.len() == 1 => &list.nested[0],
+                _ => {
+                    return Err("Incorrect syntax for #[panic]. \
+                                See documentation for #[com_impl]"
+                        .into())
+                }
+            };
+
+            match attr {
+                NestedMeta::Meta(Meta::Word(id)) if id == "abort" => {
+                    return Ok(OnPanic::Abort);
+                }
+                NestedMeta::Meta(Meta::NameValue(MetaNameValue {
+                    ident,
+                    lit: Lit::Str(lit),
+                    ..
+                })) if ident == "result" => {
+                    let expr: Expr = match syn::parse_str(&lit.value()) {
+                        Ok(expr) => expr,
+                        Err(e) => return Err(format!("Error parsing #[panic] attribute: {}", e)),
+                    };
+
+                    let expr = quote_spanned!{lit.span()=> { #expr }};
+                    return Ok(OnPanic::Hresult(Box::new(expr)));
+                }
+                _ => {
+                    return Err("Incorrect syntax for #[panic]. \
+                                See documentation for #[com_impl]."
+                        .into())
+                }
+            }
+        }
+
+        Ok(OnPanic::Nothing)
     }
 
     fn determine_abi(item: &ImplItemMethod) -> String {

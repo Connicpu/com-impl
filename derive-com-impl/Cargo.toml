@@ -1,6 +1,6 @@
 [package]
 name = "derive-com-impl"
-version = "0.1.0-alpha2"
+version = "0.1.0-alpha3"
 authors = ["Connie Hilarides <conni_h@outlook.com>"]
 license = "MIT"
 edition = "2015"

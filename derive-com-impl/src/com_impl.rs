@@ -170,11 +170,6 @@ struct ComFunction<'a> {
 
 impl<'a> ComFunction<'a> {
     fn quote_stub(&self, context: &ComImpl) -> TokenStream {
-        let unsafemod = if self.is_unsafe {
-            quote! { unsafe }
-        } else {
-            quote!{}
-        };
         let (refderef, ptrkind) = if self.is_mut {
             (quote! { &mut * }, quote! { mut })
         } else {
@@ -190,7 +185,7 @@ impl<'a> ComFunction<'a> {
 
         quote! {
             #[inline(never)]
-            #unsafemod extern #abi fn #name(#args) #ret {
+            unsafe extern #abi fn #name(#args) #ret {
                 let this = #refderef(this as *#ptrkind Self);
                 Self::#body_name(this, #pass)
             }

@@ -136,6 +136,10 @@ impl<'a> ComImpl<'a> {
     // ----------------------------------------------------------------
 
     fn parse(input: &'a DeriveInput) -> Result<Self, String> {
+        if !Self::is_repr_c(input) {
+            return Err("Your struct *must* be #[repr(C)] for ComImpl.".into());
+        }
+
         let data = match &input.data {
             Data::Struct(data) => data,
             _ => return Err("ComImpl will only work with structs with named members.".into()),
@@ -160,6 +164,30 @@ impl<'a> ComImpl<'a> {
             interfaces,
             generics,
         })
+    }
+
+    fn is_repr_c(input: &'a DeriveInput) -> bool {
+        for attr in &input.attrs {
+            if attr.path.segments.len() != 1 || attr.path.segments[0].ident != "repr" {
+                continue;
+            }
+
+            let meta = match attr.parse_meta() {
+                Ok(meta) => meta,
+                Err(_) => continue,
+            };
+
+            let list = match &meta {
+                Meta::List(list) if list.nested.len() > 0 => list,
+                _ => continue,
+            };
+
+            match &list.nested[0] {
+                NestedMeta::Meta(Meta::Word(id)) if id == "C" => return true,
+                _ => continue,
+            }
+        }
+        false
     }
 
     fn determine_vtbl_member(fields: &FieldsNamed) -> Result<&Ident, String> {
@@ -264,7 +292,7 @@ impl<'a> ComImpl<'a> {
                     } else {
                         break;
                     }
-                },
+                }
                 _ => unreachable!(),
             };
 

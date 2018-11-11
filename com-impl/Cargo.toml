@@ -2,7 +2,15 @@
 name = "com-impl"
 version = "0.1.0-alpha1"
 authors = ["Connie Hilarides <conni_h@outlook.com>"]
+license = "MIT"
 edition = "2015"
+repository = "https://github.com/connicpu/com-impl"
+documentation = "https://docs.rs/com-impl"
+description = """
+Types useful for implementing COM interfaces from Rust
+
+See `derive-com-impl` for the macros that rely on these types.
+"""
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.6", features = ["unknwnbase"] }

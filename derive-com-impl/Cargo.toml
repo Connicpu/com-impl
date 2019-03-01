@@ -1,6 +1,6 @@
 [package]
 name = "derive-com-impl"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Connie Hilarides <conni_h@outlook.com>"]
 license = "MIT"
 edition = "2018"
@@ -12,6 +12,7 @@ Procedural macros to help implement COM interfaces from Rust.
 """
 
 [lib]
+name = "derive_com_impl"
 proc-macro = true
 
 [dependencies]
@@ -22,7 +23,7 @@ proc-macro2 = "0.4.20"
 [package.metadata.docs.rs]
 default-target = "x86_64-pc-windows-msvc"
 
-[dev-dependencies]
-com-impl = { version = "0.1.0", path = "../com-impl" }
-wio = "0.2.0"
-winapi = { version = "0.3.6", features = ["dwrite"] }
+#[dev-dependencies]
+#com-impl = { version = "0.1.0", path = "../com-impl" }
+#wio = "0.2.0"
+#winapi = { version = "0.3.6", features = ["dwrite"] }

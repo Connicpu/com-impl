@@ -5,7 +5,7 @@ use winapi::um::dwrite::{IDWriteFontFileStream, IDWriteFontFileStreamVtbl};
 use wio::com::ComPtr;
 
 #[repr(C)]
-#[derive(ComImpl)]
+#[derive(com_impl::ComImpl)]
 pub struct FileStream {
     vtbl: VTable<IDWriteFontFileStreamVtbl>,
     refcount: Refcount,
@@ -22,7 +22,7 @@ impl FileStream {
     }
 }
 
-#[com_impl]
+#[com_impl::com_impl]
 unsafe impl IDWriteFontFileStream for FileStream {
     unsafe fn get_file_size(&self, size: *mut u64) -> HRESULT {
         *size = self.file_data.len() as u64;

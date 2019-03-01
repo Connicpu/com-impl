@@ -2,11 +2,10 @@
 name = "test-com-impl"
 version = "0.1.0"
 authors = ["Connie Hilarides <conni_h@outlook.com>"]
-edition = "2015"
+edition = "2018"
 
 [dependencies]
 com-impl = { path = "../com-impl" }
-derive-com-impl = { path = "../derive-com-impl" }
 wio = "0.2.0"
 
 [dependencies.winapi]

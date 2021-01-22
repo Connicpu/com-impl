@@ -122,6 +122,8 @@ impl<'a> ComImpl<'a> {
                         return winapi::shared::winerror::E_POINTER;
                     }
                     if #( #is_equal_iid )||* {
+                        let that = &*(this as *const Self);
+                        that.#refcount.add_ref();
                         *ppv = this as *mut winapi::ctypes::c_void;
                         winapi::shared::winerror::S_OK
                     } else {

@@ -280,7 +280,7 @@ impl<'a> ComFunction<'a> {
                 });
                 match __com_impl_result {
                     Ok(result) => result,
-                    Err(_) => { #expr }
+                    Err(_) => #expr
                 }
             },
         }
@@ -404,10 +404,10 @@ impl<'a> ComFunction<'a> {
         let mut name = String::with_capacity(orig_name.len());
         for c in orig_name.chars() {
             match c {
-                '0'...'9' => name.push(c),
-                'A'...'Z' => name.push(c),
-                'a'...'z' if !is_start => name.push(c),
-                'a'...'z' if is_start => {
+                '0'..='9' => name.push(c),
+                'A'..='Z' => name.push(c),
+                'a'..='z' if !is_start => name.push(c),
+                'a'..='z' if is_start => {
                     name.push(c.to_ascii_uppercase());
                     is_start = false;
                 }

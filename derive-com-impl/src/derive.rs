@@ -107,7 +107,7 @@ impl<'a> ComImpl<'a> {
                     let count = (*ptr).#refcount.release();
                     if count == 0 {
                         // This was the last ref
-                        Box::from_raw(ptr);
+                        ::std::mem::drop(Box::from_raw(ptr));
                     }
                     count
                 }
@@ -282,7 +282,7 @@ impl<'a> ComImpl<'a> {
             match &mut vtbl_ty {
                 Type::Path(path) => {
                     let mut last = path.path.segments.last_mut().unwrap();
-                    let mut last = last.value_mut();
+                    let last = last.value_mut();
                     let s = last.ident.to_string();
                     if s.ends_with("Vtbl") {
                         let nonv = &s[..s.len() - 4];

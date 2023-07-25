@@ -1,6 +1,6 @@
 [package]
 name = "com-impl"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Connie Hilarides <conni_h@outlook.com>"]
 license = "MIT"
 edition = "2018"
@@ -18,7 +18,7 @@ winapi = { version = "0.3.6", features = ["unknwnbase"] }
 wio = "0.2.0"
 
 [target.'cfg(windows)'.dependencies.derive-com-impl]
-version = "0.1.0"
+version = "0.2.0"
 path = "../derive-com-impl"
 
 [dev-dependencies]
